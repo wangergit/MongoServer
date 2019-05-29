@@ -3,6 +3,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
@@ -22,8 +23,9 @@ public class Hello
         model.addAttribute("msg","hello springmvc!");
         return "index";
     }
+    @ResponseBody  
     @RequestMapping("/near")
-    public String near(Model model)
+    List<DBObject>   near(Model model,String ss)
     {
     	DBObject query = new BasicDBObject();
     	Point point = new Point();
@@ -35,8 +37,9 @@ public class Hello
     	for(DBObject obj : list)
     	   System.out.println(obj);
 
-        model.addAttribute("results",list);
-        return "index";
+        //model.addAttribute("results",list);
+        return list;
+       
     }
     @RequestMapping("/count")
     public String count(Model model)

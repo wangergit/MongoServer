@@ -10,4 +10,5 @@ public interface  MongoDao {
 	public void update(String collection, DBObject query, DBObject update, boolean upsert, boolean multi);
 	public Long count(String collection, DBObject query);
 	public List<?> distinct(String collection, String key, DBObject query);
+
 }
