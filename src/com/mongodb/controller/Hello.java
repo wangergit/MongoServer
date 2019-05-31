@@ -1,4 +1,5 @@
 package com.mongodb.controller;
+import org.bson.types.Decimal128;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -14,6 +15,7 @@ import com.mongodb.dao.Point;
 import com.mongodb.service.MongoDaoImpl;
 import com.sun.xml.internal.txw2.Document;
 
+import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -53,7 +55,7 @@ public class Hello
     	point.setLng(x);
     	point.setLat(y);
     	List<DBObject> list = mongoDao.geoNear(table, query, point, limit, (long) distance);
-    	Map<String,List<DBObject>> result = new HashMap();
+    	Map<String,List<DBObject>> result = new HashMap<>();
     	result.put("data", list);
         return result;
     }
@@ -70,7 +72,7 @@ public class Hello
     {
     	DBObject query = new BasicDBObject();
     	Long count = mongoDao.count(table, query);
-    	Map<String,Long> result = new HashMap();
+    	Map<String,Long> result = new HashMap<>();
     	result.put("count", count);
         return result;
     }
@@ -93,53 +95,71 @@ public class Hello
     	}
     	DBObject fields = new BasicDBObject();
     	List<DBObject> results = mongoDao.find(table, query, fields, order, 1000);
-    	Map<String,List<DBObject>> result = new HashMap();
+    	Map<String,List<DBObject>> result = new HashMap<>();
     	result.put("data", results);
         return result;
     }
     
+    /**
+     * 更新数据
+     * @param model
+     * @param request
+     * table 表名称
+     * key 查询字段
+     * value 查询字段值
+     * update 要更新的coordinates坐标集合
+     * @return
+     */
     @ResponseBody
     @RequestMapping(value="/update",method = RequestMethod.POST)
     public Map<String,Object> update(Model model,HttpServletRequest request)
     {
-    	String status = "success";
-    	//JSONObject editItems = (JSONObject) JSONObject.parse((String) request.getParameter("update"));
     	JSONArray editItems = JSONArray.parseArray((String) request.getParameter("update"));
     	String table = (String) request.getParameter("table");
-    	
-    	DBObject query = new BasicDBObject();
-    	query.put((String) request.getParameter("key"), (String) request.getParameter("value"));
-    	
-    	DBObject update = new BasicDBObject();
-    	JSONObject items = new JSONObject();
-    	
-    	//List<List<double[]>> polygons = new LinkedList<>();
-//    	for(int i = 0 ; i < editItems.size() ; i ++) {
-//    		JSONArray job = editItems.getJSONArray(i);
-//    		if(job.size() > 0) {
-//    			for(int j = 0 ; j < job.size() ; j ++) {
-//    	    		JSONArray job1 = job.getJSONArray(j);
-//    	    		if(job1.size() > 0) {
-//    	    			for(int k = 0 ; k < job1.size() ; k ++) {
-//    	    				job1.get(k) = new Decimal128(job1.getBigDecimal(k));
-//    	    	    	}
-//    	    		}
-//    	    	}
-//    		}
-//    	}
-        //polygons.add((List<double[]>) editItems.get(0));
-        items.put("geometry.coordinates", editItems);
-        update.put("$set",items);
-    	//update.put("$set", new BasicDBObject("geometry",
-                //new BasicDBObject("type","Polygon")
-                //.append("coordinates",polygons)));
-    	try {
-    		mongoDao.update(table, query, update, false, true);
-    	}catch(Exception e) {
-    		status = "error";
-    		e.printStackTrace();
-    	}
-    	Map<String,Object> result = new HashMap();
+    	String status = mongoDao.update(table, (String) request.getParameter("key"),(String) request.getParameter("value"), editItems, false, true);
+    	Map<String,Object> result = new HashMap<>();
+    	result.put("data", status);
+        return result;
+    }
+    
+    /**
+     * 保存数据
+     * @param model
+     * @param request
+     * table ： 表名称
+     * save ： geojson字符串
+     * @return
+     */
+    @ResponseBody
+    @RequestMapping(value="/save",method = RequestMethod.POST)
+    public Map<String,Object> save(Model model,HttpServletRequest request)
+    {
+    	JSONObject saveItems = JSONObject.parseObject((String) request.getParameter("save"));
+    	String table = (String) request.getParameter("table");
+    	String status = mongoDao.save(table, saveItems);
+    	Map<String,Object> result = new HashMap<>();
+    	result.put("data", status);
+        return result;
+    }
+    
+    /**
+     * 删除数据
+     * @param model
+     * @param request
+     * table : 表名称
+     * key : 属性字段
+     * value ： 属性值
+     * @return
+     */
+    @ResponseBody
+    @RequestMapping(value="/delete",method = RequestMethod.POST)
+    public Map<String,Object> delete(Model model,HttpServletRequest request)
+    {
+    	String table = (String) request.getParameter("table");
+    	String key = (String) request.getParameter("key");
+    	String value = (String) request.getParameter("value");
+    	int status = mongoDao.delete(table, key , value);
+    	Map<String,Object> result = new HashMap<>();
     	result.put("data", status);
         return result;
     }

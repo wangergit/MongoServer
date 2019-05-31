@@ -1,11 +1,15 @@
 package com.mongodb.service;
 
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 import com.mongodb.AggregationOptions;
 import com.mongodb.BasicDBObject;
 import com.mongodb.Cursor;
 import com.mongodb.DBObject;
+import com.mongodb.WriteResult;
 import com.mongodb.dao.*;
- 
+
+import org.bson.types.Decimal128;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,19 +61,38 @@ public  class MongoDaoImpl implements MongoGeoDao {
     }
  
     @Override
-    public void delete(String collection, DBObject dbObject) {
-        mongoTemplate.getCollection(collection).remove(dbObject);
+    public int delete(String collection,String key, String value) {
+    	int status = 0;
+    	DBObject delete = new BasicDBObject();
+    	delete.put(key, value);
+    	try {
+    		WriteResult s = mongoTemplate.getCollection(collection).remove(delete);
+    		//status = s.getN();
+    		status = 1;
+    	}catch(Exception e) {
+    		e.printStackTrace();
+    	}
+        return status;
     }
  
     @Override
-    public void save(String collection, DBObject dbObject) {
-        mongoTemplate.getCollection(collection).save(dbObject);
-    }
- 
-    @Override
-    public void update(String collection, DBObject query, DBObject update, boolean upsert, boolean multi) {
-        mongoTemplate.getCollection(collection).update(query, update, upsert, multi);
-        //mongoTemplate.getCollection(collection).update(query, update);
+    public String save(String collection, JSONObject saveItems) {
+    	String status = "success";
+    	DBObject save = new BasicDBObject();
+    	
+    	JSONObject geom = (JSONObject) saveItems.get("geometry");
+    	JSONArray coordinates = (JSONArray) geom.get("coordinates");
+    	geom.put("coordinates", DecimalToDouble(coordinates));
+    	
+    	save.putAll(saveItems);
+    	save.put("geometry", geom);
+    	try {
+            mongoTemplate.getCollection(collection).save(save);
+    	}catch(Exception e) {
+    		status = "error";
+    		e.printStackTrace();
+    	}
+        return status;
     }
  
     @Override
@@ -186,6 +209,46 @@ public  class MongoDaoImpl implements MongoGeoDao {
         query.put(locationField, new BasicDBObject("$geoWithin", new BasicDBObject("$box", box)));
         logger.info("withinBox:{}",query.toString());
         return mongoTemplate.getCollection(collection).find(query, fields).limit(limit).toArray();
+    }
+
+    @Override
+	public String update(String collection, String key, String value, JSONArray editItems, boolean upsert, boolean multi) {
+		String status = "success";
+		//查询条件
+    	DBObject query = new BasicDBObject();
+    	query.put(key,value);
+    	//更新内容
+    	DBObject update = new BasicDBObject();
+    	JSONObject items = new JSONObject();
+    	items.put("geometry.coordinates", DecimalToDouble(editItems));
+    	update.put("$set",items);
+    	try {
+    		mongoTemplate.getCollection(collection).update(query, update, upsert, multi);
+    	}catch(Exception e) {
+    		status = "error";
+    		e.printStackTrace();
+    	}
+        return status;
+	}
+    
+    //将Decimal128转换成double来存储
+    @Override
+    public JSONArray DecimalToDouble(JSONArray editItems) {
+    	for(int i = 0 ; i < editItems.size() ; i ++) {
+    		JSONArray job = editItems.getJSONArray(i);
+    		if(job.size() > 0) {
+    			for(int j = 0 ; j < job.size() ; j ++) {
+    	    		JSONArray job1 = job.getJSONArray(j);
+    	    		if(job1.size() > 0) {
+    	    			for(int k = 0 ; k < job1.size() ; k ++) {
+    	    				Decimal128 s = new Decimal128(job1.getBigDecimal(k));
+    	    				job1.set(k, Double.valueOf(s.toString()));
+    	    	    	}
+    	    		}
+    	    	}
+    		}
+    	}
+    	return editItems;
     }
  
 }
