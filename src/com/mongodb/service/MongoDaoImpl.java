@@ -69,6 +69,7 @@ public  class MongoDaoImpl implements MongoGeoDao {
     @Override
     public void update(String collection, DBObject query, DBObject update, boolean upsert, boolean multi) {
         mongoTemplate.getCollection(collection).update(query, update, upsert, multi);
+        //mongoTemplate.getCollection(collection).update(query, update);
     }
  
     @Override
