@@ -1,22 +1,22 @@
-<?xml version="1.0" encoding="UTF-8"?>  
-<beans xmlns="http://www.springframework.org/schema/beans"  
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"    
-    xmlns:context="http://www.springframework.org/schema/context"  
-    xmlns:mongo="http://www.springframework.org/schema/data/mongo"  
-    xsi:schemaLocation="http://www.springframework.org/schema/context   
-          http://www.springframework.org/schema/context/spring-context-3.0.xsd   
-          http://www.springframework.org/schema/data/mongo   
-          http://www.springframework.org/schema/data/mongo/spring-mongo-1.0.xsd   
-          http://www.springframework.org/schema/beans   
-          http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">  
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:mongo="http://www.springframework.org/schema/data/mongo"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+    http://www.springframework.org/schema/data/mongo
+    http://www.springframework.org/schema/data/mongo/spring-mongo-2.0.xsd
+    http://www.springframework.org/schema/context
+    http://www.springframework.org/schema/context/spring-context-3.0.xsd">
           
     <!-- 加载mongodb的属性配置文件 -->
     <context:property-placeholder location="classpath:mongodb.properties" />
     
     <!-- 定义mongo对象，对应的是mongodb官方jar包中的Mongo，replica-set设置集群副本的ip地址和端口 -->
-	<mongo:mongo host="localhost" port="27017" />
+<!-- 	<mongo:mongo host="localhost" port="27017" />
 	
-    <mongo:db-factory dbname="database" mongo-ref="mongo"/>
+    <mongo:db-factory dbname="mongoDB" mongo-ref="mongo"/>
     <bean id="userCredentials" class="org.springframework.data.authentication.UserCredentials">
         <constructor-arg name="username" value="mongoAdmin" />
         <constructor-arg name="password" value="123456" />
@@ -25,6 +25,27 @@
         <constructor-arg ref="mongo" />
         <constructor-arg ref="userCredentials" />
         <constructor-arg name="databaseName" value="mongoDB"/>
+    </bean> -->
+
+
+
+    <!--credentials的配置形式是：用户名:密码@默认数据库-->
+    <mongo:mongo-client id="mongoClient" host="${mongodb.host}" port="${mongodb.port}"    credentials="${mongodb.username}:${mongodb.password}@${mongodb.dbname}">
+        <mongo:client-options  write-concern="SAFE"
+                               connections-per-host="${mongodb.connectionsPerHost}"
+                               threads-allowed-to-block-for-connection-multiplier="${mongodb.threadsAllowedToBlockForConnectionMultiplier}"
+                               connect-timeout="${mongodb.connectTimeout}"
+                               max-wait-time="${mongodb.maxWaitTime}"
+                               socket-timeout="${mongodb.socketTimeout}"/>
+    </mongo:mongo-client>
+    
+    <!-- mongo的工厂，通过它来取得mongo实例,dbname为mongodb的数据库名，没有的话会自动创建 -->
+    <mongo:db-factory id="mongoDbFactory" dbname="${mongodb.dbname}" mongo-ref="mongoClient" />
+    <!-- mongodb的主要操作对象，所有对mongodb的增删改查的操作都是通过它完成 -->
+    <bean id="mongoTemplate" class="org.springframework.data.mongodb.core.MongoTemplate">
+        <constructor-arg name="mongoDbFactory" ref="mongoDbFactory" />
     </bean>
 
+    <!-- 映射转换器，扫描back-package目录下的文件，根据注释，把它们作为mongodb的一个collection的映射 -->
+    
 </beans>
