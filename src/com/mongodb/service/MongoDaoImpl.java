@@ -113,10 +113,10 @@ public  class MongoDaoImpl implements MongoGeoDao {
         List<DBObject> pipeLine = new ArrayList<>();
         BasicDBObject aggregate = new BasicDBObject("$geoNear",
 	    		new BasicDBObject("near",new BasicDBObject("type","Point").append("coordinates",new double[]{point.getLng(), point.getLat()}))
-				        .append("distanceField","dist.calculated")
+				        .append("distanceField","properties.distance")
 				        .append("query", new BasicDBObject())
 				        .append("num", 5)
-				        .append("maxDistance", 5000)
+				        .append("maxDistance", maxDistance)
 				        .append("spherical",true)
 	    		);
         pipeLine.add(aggregate);

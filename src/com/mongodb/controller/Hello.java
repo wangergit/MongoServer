@@ -86,9 +86,12 @@ public class Hello
      */
     @ResponseBody
     @RequestMapping("/find")
-    public Map<String,List<DBObject>> find(Model model,String table,String orderFiled)
+    public Map<String,List<DBObject>> find(Model model,String table,String orderFiled,String key,String value)
     {
     	DBObject query = new BasicDBObject();
+    	if(key != null && value != null) {
+    		query.put(key, value);
+    	}
     	DBObject order = new BasicDBObject();
     	if(!orderFiled.equals("")) {
     		order.put(orderFiled, 0);
