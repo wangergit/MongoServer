@@ -61,13 +61,16 @@ public  class MongoDaoImpl implements MongoGeoDao {
     }
  
     @Override
-    public int delete(String collection,String key, String value) {
+    public int delete(String collection,String[] key, String[] value) {
     	int status = 0;
     	DBObject delete = new BasicDBObject();
-    	delete.put(key, value);
+    	if(key != null && value != null) {
+    		for (int i = 0; i < key.length; i++) {
+            	delete.put(key[i], value[i]);
+    		}
+    	}
     	try {
-    		WriteResult s = mongoTemplate.getCollection(collection).remove(delete);
-    		//status = s.getN();
+    		mongoTemplate.getCollection(collection).remove(delete);
     		status = 1;
     	}catch(Exception e) {
     		e.printStackTrace();
@@ -211,6 +214,7 @@ public  class MongoDaoImpl implements MongoGeoDao {
         return mongoTemplate.getCollection(collection).find(query, fields).limit(limit).toArray();
     }
 
+    //更新空间范围geometry
     @Override
 	public String update(String collection, String key, String value, JSONArray editItems, boolean upsert, boolean multi) {
 		String status = "success";
@@ -231,24 +235,63 @@ public  class MongoDaoImpl implements MongoGeoDao {
         return status;
 	}
     
+    //更新属性prototype
+    @Override
+	public String updatePrototype(String table, String[] key, String[] value, JSONObject prototype, boolean b,boolean c) {
+		String status = "success";
+		//查询条件
+    	DBObject query = new BasicDBObject();
+    	if(key != null && value != null) {
+    		for (int i = 0; i < key.length; i++) {
+    			query.put(key[i],value[i]);
+			}
+    	}
+    	//更新内容
+    	DBObject update = new BasicDBObject();
+    	JSONObject items = new JSONObject();
+    	items.put("prototype",prototype);
+    	update.put("$set",items);//只更新prototype字段
+    	try {
+    		mongoTemplate.getCollection(table).update(query, update, b, c);
+    	}catch(Exception e) {
+    		status = "error";
+    		e.printStackTrace();
+    	}
+		return status;
+	}
+    
     //将Decimal128转换成double来存储
     @Override
     public JSONArray DecimalToDouble(JSONArray editItems) {
     	for(int i = 0 ; i < editItems.size() ; i ++) {
-    		JSONArray job = editItems.getJSONArray(i);
-    		if(job.size() > 0) {
-    			for(int j = 0 ; j < job.size() ; j ++) {
-    	    		JSONArray job1 = job.getJSONArray(j);
-    	    		if(job1.size() > 0) {
-    	    			for(int k = 0 ; k < job1.size() ; k ++) {
-    	    				Decimal128 s = new Decimal128(job1.getBigDecimal(k));
-    	    				job1.set(k, Double.valueOf(s.toString()));
-    	    	    	}
-    	    		}
-    	    	}
+    		try {
+    			JSONArray job = editItems.getJSONArray(i);
+        		if(job.size() > 0) {
+        			for(int j = 0 ; j < job.size() ; j ++) {
+        	    		JSONArray job1 = job.getJSONArray(j);
+        	    		if(job1.size() > 0) {
+        	    			for(int k = 0 ; k < job1.size() ; k ++) {
+        	    				Decimal128 s = new Decimal128(job1.getBigDecimal(k));
+        	    				job1.set(k, Double.valueOf(s.toString()));
+        	    	    	}
+        	    		}
+        	    	}
+        		}
+    		}catch(Exception e) {
+    			Decimal128 s = new Decimal128(editItems.getBigDecimal(i));
+    			editItems.set(i, Double.valueOf(s.toString()));
     		}
     	}
     	return editItems;
+    }
+    
+    /**
+     * 字符串转数组
+     */
+    @Override
+    public String[] stringToArr(String str){
+    	String[] arr = str.split(","); // 用,分割
+    	return arr;
     }
  
 }

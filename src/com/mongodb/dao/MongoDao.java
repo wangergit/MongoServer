@@ -8,11 +8,12 @@ public interface  MongoDao {
 	public DBObject findOne(String collection, DBObject query, DBObject fields);
 	public List<DBObject> find(String collection, DBObject query, DBObject fields, DBObject orderBy, int pageNum, int pageSize);
 	public List<DBObject> find(String collection, DBObject query, DBObject fields, DBObject orderBy, int limit);
-	public int delete(String collection,String key, String value);
+	public int delete(String collection,String[] key, String[] value);
 	public String save(String collection, JSONObject saveItems);
 	public String update(String collection, String key, String value, JSONArray editItems, boolean upsert, boolean multi);
 	public Long count(String collection, DBObject query);
 	public List<?> distinct(String collection, String key, DBObject query);
 	JSONArray DecimalToDouble(JSONArray editItems);
-
+	String[] stringToArr(String str);
+	String updatePrototype(String table, String[] key, String[] value, JSONObject prototype, boolean b,boolean c);
 }

@@ -3,6 +3,7 @@ import org.bson.types.Decimal128;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -86,11 +87,13 @@ public class Hello
      */
     @ResponseBody
     @RequestMapping("/find")
-    public Map<String,List<DBObject>> find(Model model,String table,String orderFiled,String key,String value)
+    public Map<String,List<DBObject>> find(Model model,String table,String orderFiled,String[] key,String[] value)
     {
     	DBObject query = new BasicDBObject();
     	if(key != null && value != null) {
-    		query.put(key, value);
+    		for (int i = 0; i < key.length; i++) {
+    			query.put(key[i], value[i]);
+			}
     	}
     	DBObject order = new BasicDBObject();
     	if(!orderFiled.equals("")) {
@@ -104,7 +107,7 @@ public class Hello
     }
     
     /**
-     * 更新数据
+     * 更新数据空间范围
      * @param model
      * @param request
      * table 表名称
@@ -120,6 +123,31 @@ public class Hello
     	JSONArray editItems = JSONArray.parseArray((String) request.getParameter("update"));
     	String table = (String) request.getParameter("table");
     	String status = mongoDao.update(table, (String) request.getParameter("key"),(String) request.getParameter("value"), editItems, false, true);
+    	Map<String,Object> result = new HashMap<>();
+    	result.put("data", status);
+        return result;
+    }
+    
+    /**
+     * 更新数据属性信息
+     * @param model
+     * @param request
+     * table 表名称
+     * key 查询字段
+     * value 查询字段值
+     * prototype 属性
+     * @return
+     */
+    @ResponseBody
+    @RequestMapping(value="/updatePrototype",method = RequestMethod.POST)
+    public Map<String,Object> updatePrototype(Model model,HttpServletRequest request)
+    {
+    	JSONObject prototype = JSONObject.parseObject((String) request.getParameter("prototype"));
+    	String table = (String) request.getParameter("table");
+    	String[] key = mongoDao.stringToArr((String) request.getParameter("key"));
+    	String[] value = mongoDao.stringToArr((String) request.getParameter("value"));
+    	
+    	String status = mongoDao.updatePrototype(table, key,value, prototype, false, true);
     	Map<String,Object> result = new HashMap<>();
     	result.put("data", status);
         return result;
@@ -159,8 +187,8 @@ public class Hello
     public Map<String,Object> delete(Model model,HttpServletRequest request)
     {
     	String table = (String) request.getParameter("table");
-    	String key = (String) request.getParameter("key");
-    	String value = (String) request.getParameter("value");
+    	String[] key = mongoDao.stringToArr((String) request.getParameter("key"));
+    	String[] value = mongoDao.stringToArr((String) request.getParameter("value"));
     	int status = mongoDao.delete(table, key , value);
     	Map<String,Object> result = new HashMap<>();
     	result.put("data", status);
