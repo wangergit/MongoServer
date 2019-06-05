@@ -249,7 +249,7 @@ public  class MongoDaoImpl implements MongoGeoDao {
     	//更新内容
     	DBObject update = new BasicDBObject();
     	JSONObject items = new JSONObject();
-    	items.put("prototype",prototype);
+    	items.put("properties",prototype);
     	update.put("$set",items);//只更新prototype字段
     	try {
     		mongoTemplate.getCollection(table).update(query, update, b, c);

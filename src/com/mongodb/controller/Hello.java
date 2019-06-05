@@ -167,6 +167,10 @@ public class Hello
     {
     	JSONObject saveItems = JSONObject.parseObject((String) request.getParameter("save"));
     	String table = (String) request.getParameter("table");
+    	String[] key = mongoDao.stringToArr((String) request.getParameter("key"));
+    	String[] value = mongoDao.stringToArr((String) request.getParameter("value"));
+		mongoDao.delete(table, key, value);
+    	
     	String status = mongoDao.save(table, saveItems);
     	Map<String,Object> result = new HashMap<>();
     	result.put("data", status);
